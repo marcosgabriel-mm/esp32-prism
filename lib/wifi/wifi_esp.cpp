@@ -1,16 +1,17 @@
-#include <wifi_esp.h>
-
-#include <tags_log.h>
-#include <esp_wifi.h>
-#include <esp_log.h>
-#include <nvs_flash.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "esp_log.h"
+#include "esp_wifi.h"
+#include "nvs_flash.h"
+#include "wifi_esp.h"
 #include <string.h>
-
-#include <lwip/inet.h>
 
 #define WIFI_SSID "LTI-DLINK_2"
 #define WIFI_PASS "lti@2023"
+// #define WIFI_SSID "brisa-2514576"
+// #define WIFI_PASS "9lye1rbb"
 
+#define DEFAULT_SCAN_LIST_SIZE 10
 EventGroupHandle_t wifi_event_group;
 const int WIFI_CONNECTED_BIT = BIT0;
 
@@ -19,10 +20,8 @@ void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         esp_wifi_connect();
-        ESP_LOGI(WIFI, "Retrying to connect to the WiFi network...");
+        ESP_LOGI("WIFI", "Retrying to connect to the WiFi network...");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(WIFI, "Got IP: %s", ip4addr_ntoa((const ip4_addr_t*)&event->ip_info.ip));
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
@@ -60,21 +59,43 @@ esp_err_t wifi_init(void) {
     wifi_ap_record_t ap_info;
     ret = esp_wifi_sta_get_ap_info(&ap_info);
     if (ret == ESP_OK) {
-        ESP_LOGI(WIFI, "Connected to AP SSID: %s", ap_info.ssid);
+        ESP_LOGI("WIFI", "Connected to AP SSID: %s", ap_info.ssid);
     } else {
-        ESP_LOGI(WIFI, "Not connected to any AP");
+        ESP_LOGI("WIFI", "Not connected to any AP");
     }
 
-    ESP_LOGI(WIFI, "wifi_init_sta finished.");
+    ESP_LOGI("WIFI", "wifi_init_sta finished.");
 
     EventBits_t bits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
 
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(WIFI, "connected to ap SSID:%s password:%s", WIFI_SSID, WIFI_PASS);
+        ESP_LOGI("WIFI", "connected to ap SSID:%s password:%s", WIFI_SSID, WIFI_PASS);
     } else {
-        ESP_LOGI(WIFI, "Failed to connect to SSID:%s, password:%s", WIFI_SSID, WIFI_PASS);
+        ESP_LOGI("WIFI", "Failed to connect to SSID:%s, password:%s", WIFI_SSID, WIFI_PASS);
         return ESP_FAIL;
     }
 
     return ESP_OK;
+}
+
+void wifi_scan() {
+    ESP_LOGI("WIFI_SCAN", "Scanning for WiFi networks...");
+    wifi_scan_config_t scan_config = {
+        .ssid = NULL,
+        .bssid = NULL,
+        .channel = 0,
+        .show_hidden = true
+    };
+    ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
+
+    uint16_t ap_count = 0;
+    esp_wifi_scan_get_ap_num(&ap_count);
+    wifi_ap_record_t ap_info[ap_count];
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_count, ap_info));
+
+    for (int i = 0; i < ap_count; i++) {
+        ESP_LOGI("WIFI", "SSID \t\t%s", ap_info[i].ssid);
+        ESP_LOGI("WIFI", "RSSI \t\t%d", ap_info[i].rssi);
+        ESP_LOGI("WIFI", "Channel \t\t%d", ap_info[i].primary);
+    }
 }
