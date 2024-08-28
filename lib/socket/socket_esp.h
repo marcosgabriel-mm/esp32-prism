@@ -2,8 +2,8 @@
 #define SOCCKET_ESP_H
 
 
-void socket_client_connect(int sock, const char *host_ip_addr, int port);
+void socket_client_connect(int sock);
 bool send_message(int sock, char *message);
-
+bool verify_creation_socket(int sock);
 
 #endif
