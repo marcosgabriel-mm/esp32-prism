@@ -1,23 +1,22 @@
 #include <esp_task.h>
 #include <esp_log.h>
-
 #include <socket_esp.h>
+#include <time_esp.h>
 
 void dummy_reader_esp(void *pvParameters) {
     
-    char *TAG = "03J3DF4S";
-    UBaseType_t uxHighWaterMark;
-
     int *sock = (int *)pvParameters;
-    printf("Socket: %d\n", *sock);
-
     while (1) {
 
-        ESP_LOGI("READER", "Reading card...");
-        ESP_ERROR_CHECK(send_message(*sock, TAG));
+        char *now = get_format_time();
+        ESP_LOGI("READER", "Current time: %s", now);
 
-        uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-        ESP_LOGI("READER", "High water mark: %d", uxHighWaterMark);
+        if (!send_message(*sock, now)) {
+            //if the message wasn't sent, save it on a buffer
+            ESP_LOGI("READER", "Saving message on buffer");
+        }
+
+        //change the delay value to the card read interaction
         vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 
