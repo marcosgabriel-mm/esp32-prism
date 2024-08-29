@@ -11,26 +11,35 @@
 
 #include <socket_esp.h>
 #include <reader_esp.h>
+#include <time_esp.h>
 
 #define WIFI_SSID "brisa-2514576"
 #define WIFI_PASS "9lye1rbb"
 
-#define HOST_IP_ADDR "192.168.0.23" 
+#define HOST_IP_ADDR "192.168.0.23"
 #define PORT 1234
 
 extern "C" void app_main() {
     
     ESP_LOGI(MAIN, "Starting ESP32 application...");    
     ESP_ERROR_CHECK(wifi_init(WIFI_SSID, WIFI_PASS));
+    ESP_ERROR_CHECK(sync_time());
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    socket_client_connect(sock, HOST_IP_ADDR, PORT);
+    int *sock = (int *)pvPortMalloc(sizeof(int));
+    if (sock == NULL) {
+        ESP_LOGE(MAIN, "Failed to allocate memory for socket");
+        return;
+    }
 
-    printf("Socket: %d\n", sock);
-    xTaskCreate(&dummy_reader_esp, "dummy_reader_esp", 4096, &sock, 1, NULL);
-    
+    // make the main code and in the future try to make verifications for the socket connection
+    *sock = socket(AF_INET, SOCK_STREAM, 0);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(socket_client_connect(*sock, HOST_IP_ADDR, PORT));
 
-    // xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
-    // xTaskCreate(&http_get_task, "http_get_task", 8192, NULL, 5, NULL);
-    // xTaskCreate(&socket_client_task, "tcp_client_task", 4096, NULL, 5, NULL);
+    size_t free_heap_size = esp_get_free_heap_size();
+    ESP_LOGI(MAIN, "Free heap size: %d bytes | %d megabytes", free_heap_size, free_heap_size / 1024);
+
+    xTaskCreate(&dummy_reader_esp, "dummy_reader_esp", 1024*4, sock, 5, NULL);
+
+    // clean up the memory allocated when isn't needed anymore
+    // vPortFree(sock);
 }

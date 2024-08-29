@@ -18,11 +18,14 @@ esp_err_t sync_time() {
     esp_sntp_setservername(0, (char *) "pool.ntp.org");
     sntp_set_time_sync_notification_cb(time_sync_notification_cb);
     esp_sntp_init();
+    setenv("TZ", "BRT3", 1);
+    tzset();
 
     time_t now = 0;
-    struct tm timeinfo = { 0 };
     int retry = 0;
+    struct tm timeinfo = { 0 };
     const int retry_count = 10;
+
     while (timeinfo.tm_year < (2016 - 1900) && ++retry < retry_count) {
         ESP_LOGI(TIME, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
         vTaskDelay(2000 / portTICK_PERIOD_MS);

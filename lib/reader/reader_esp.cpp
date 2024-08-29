@@ -17,7 +17,7 @@ void dummy_reader_esp(void *pvParameters) {
         }
 
         //change the delay value to the card read interaction
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(20000 / portTICK_PERIOD_MS);
     }
 
 }

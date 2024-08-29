@@ -8,9 +8,6 @@
 #include <esp_system.h>
 #include <esp_mac.h>
 
-#define HOST_IP_ADDR "192.168.0.23"
-#define PORT 1234
-
 char mac_str[18];
 bool first_connection_flag = true;
 
@@ -48,10 +45,6 @@ bool recive_message(int sock) {
 
 bool send_message(int sock, char *message) {
 
-    if (first_connection_flag) {
-        first_connection(sock);
-    }
-
     int err = send(sock, message, strlen(message), 0);
     if (err < 0 || !recive_message(sock)) {
         ESP_LOGE(SOCKET, "Error occurred during sending: errno %d", errno);
@@ -62,11 +55,11 @@ bool send_message(int sock, char *message) {
 }
 
 
-bool socket_client_connect(int sock) {
+esp_err_t socket_client_connect(int sock, const char *HOST_IP_ADDR, const int PORT) {
 
     if (sock < 0) {
         ESP_LOGE(SOCKET, "Error to create socket: errno %d", errno);
-        return false;
+        return ESP_FAIL;
     }
 
     struct sockaddr_in dest_addr;
@@ -79,9 +72,9 @@ bool socket_client_connect(int sock) {
     if (err != 0) {
         ESP_LOGE(SOCKET, "Socket unable to connect with the host: errno %d", errno);
         // you can close the socket here with close(sock)
-        return false;
+        return ESP_FAIL;
     }
     ESP_LOGI(SOCKET, "Successfully connected with the host on IP: %s:%d", HOST_IP_ADDR, PORT);
 
-    return true;
+    return ESP_OK;
 }
