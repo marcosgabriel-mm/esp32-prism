@@ -1,8 +1,13 @@
 #ifndef SOCCKET_ESP_H
 #define SOCCKET_ESP_H
 
-// void send_and_recive_message( int sock, char *rx_buffer);
-void socket_client_connect(int sock);
-// void socket_handle_t();
+// initialize the socket connection with the server
+esp_err_t socket_client_connect(int sock);
 
-#endif SOCCKET_ESP_H
+// recive a message from the server
+bool recive_message(int sock);
+
+// send a message to the server
+bool send_message(int sock, char *message);
+
+#endif

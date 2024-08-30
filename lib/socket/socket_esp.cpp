@@ -8,7 +8,7 @@
 #include <esp_system.h>
 #include <esp_mac.h>
 
-#define HOST_IP_ADDR "192.168.0.128" 
+#define HOST_IP_ADDR "26.7.181.15" 
 #define PORT 1234
 
 char mac_str[18];
@@ -28,20 +28,6 @@ void first_connection(int sock) {
     first_connection_flag = false;
 }
 
-bool send_message(int sock, char *message) {
-    int err = send(sock, message, strlen(message), 0);
-    if (err < 0) {
-        ESP_LOGE(SOCKET, "Error occurred during sending: errno %d", errno);
-        return false;
-    }
-
-    if (recive_message(sock)) {
-        return false;
-    }
-
-    return true;
-}
-
 bool recive_message(int sock) {
     char rx_buffer[128];
     int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
@@ -58,17 +44,25 @@ bool recive_message(int sock) {
     return false;
 }
 
-void host_still_alive() {
+bool send_message(int sock, char *message) {
+    int err = send(sock, message, strlen(message), 0);
+    if (err < 0) {
+        ESP_LOGE(SOCKET, "Error occurred during sending: errno %d", errno);
+        return false;
+    }
 
-    //if server shtudown or something else, try to reconnect
+    if (recive_message(sock)) {
+        return false;
+    }
 
+    return true;
 }
 
-void socket_client_connect(int sock) {
+esp_err_t socket_client_connect(int sock) {
 
     if (sock < 0) {
         ESP_LOGE(SOCKET, "Unable to create socket: errno %d", errno);
-        return;
+        return ESP_FAIL;
     }
     ESP_LOGI(SOCKET, "Socket created, connecting to %s:%d", HOST_IP_ADDR, PORT);
 
@@ -80,16 +74,28 @@ void socket_client_connect(int sock) {
 
     int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
     if (err != 0) {
-        ESP_LOGE(SOCKET, "Socket unable to connect: errno %d", errno);
+        switch (errno) {
+            case ECONNREFUSED:
+                ESP_LOGE(SOCKET, "Connection refused");
+                break;
+            case ETIMEDOUT:
+                ESP_LOGE(SOCKET, "Connection timeout");
+                break;
+            case EHOSTUNREACH:
+                ESP_LOGE(SOCKET, "Host unreachable");
+                break;
+            default:
+                ESP_LOGE(SOCKET, "Error occurred during connecting: errno %d", errno);
+                break;
+        }
         close(sock);
-        return;
+        return ESP_FAIL;
     }
     ESP_LOGI(SOCKET, "Successfully connected");
-
     if (first_connection_flag) {
         first_connection(sock);
     }
-
+    return ESP_OK;
 }
 
 

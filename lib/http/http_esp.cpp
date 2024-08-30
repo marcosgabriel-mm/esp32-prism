@@ -31,9 +31,6 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
         case HTTP_EVENT_DISCONNECTED:
             ESP_LOGI(HTTP, "HTTP_EVENT_DISCONNECTED");
             break;
-        case HTTP_EVENT_REDIRECT:
-            ESP_LOGI(HTTP, "HTTP_EVENT_REDIRECT");
-            break;
         default:
             ESP_LOGI(HTTP, "Unhandled HTTP event: %d", evt->event_id);
             break;
@@ -51,7 +48,7 @@ void http_get_task(void* pvParameters) {
     esp_err_t err = esp_http_client_perform(client);
 
     if (err == ESP_OK) {
-        ESP_LOGI(HTTP, "HTTP GET Status = %d, content_length = %lld",
+        ESP_LOGI(HTTP, "HTTP GET Status = %d, content_length = %d",
                  esp_http_client_get_status_code(client),
                  esp_http_client_get_content_length(client));
     } else {

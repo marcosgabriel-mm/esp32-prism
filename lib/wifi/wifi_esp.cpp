@@ -5,13 +5,12 @@
 #include "nvs_flash.h"
 #include "wifi_esp.h"
 #include <string.h>
+#include <tags_log.h>
 
-#define WIFI_SSID "LTI-DLINK_2"
-#define WIFI_PASS "lti@2023"
-// #define WIFI_SSID "brisa-2514576"
-// #define WIFI_PASS "9lye1rbb"
-
+#define WIFI_SSID "ZEMARCOS"
+#define WIFI_PASS "mgmm4103"
 #define DEFAULT_SCAN_LIST_SIZE 10
+
 EventGroupHandle_t wifi_event_group;
 const int WIFI_CONNECTED_BIT = BIT0;
 
@@ -20,13 +19,13 @@ void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         esp_wifi_connect();
-        ESP_LOGI("WIFI", "Retrying to connect to the WiFi network...");
+        ESP_LOGI(WIFI, "Retrying to connect to the WiFi network...");
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
 
-esp_err_t wifi_init(void) {
+esp_err_t wifi_init() {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -59,19 +58,18 @@ esp_err_t wifi_init(void) {
     wifi_ap_record_t ap_info;
     ret = esp_wifi_sta_get_ap_info(&ap_info);
     if (ret == ESP_OK) {
-        ESP_LOGI("WIFI", "Connected to AP SSID: %s", ap_info.ssid);
+        ESP_LOGI(WIFI, "Connected to AP SSID: %s", ap_info.ssid);
     } else {
-        ESP_LOGI("WIFI", "Not connected to any AP");
+        ESP_LOGI(WIFI, "Not connected to any AP");
     }
 
-    ESP_LOGI("WIFI", "wifi_init_sta finished.");
-
+    ESP_LOGI(WIFI, "wifi_init_sta finished.");
     EventBits_t bits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
 
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI("WIFI", "connected to ap SSID:%s password:%s", WIFI_SSID, WIFI_PASS);
+        ESP_LOGI(WIFI, "connected to ap SSID: %s | password: %s", WIFI_SSID, WIFI_PASS);
     } else {
-        ESP_LOGI("WIFI", "Failed to connect to SSID:%s, password:%s", WIFI_SSID, WIFI_PASS);
+        ESP_LOGI(WIFI, "Failed to connect to SSID:%s, password:%s", WIFI_SSID, WIFI_PASS);
         return ESP_FAIL;
     }
 
@@ -94,8 +92,8 @@ void wifi_scan() {
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&ap_count, ap_info));
 
     for (int i = 0; i < ap_count; i++) {
-        ESP_LOGI("WIFI", "SSID \t\t%s", ap_info[i].ssid);
-        ESP_LOGI("WIFI", "RSSI \t\t%d", ap_info[i].rssi);
-        ESP_LOGI("WIFI", "Channel \t\t%d", ap_info[i].primary);
+        ESP_LOGI(WIFI, "SSID \t\t%s", ap_info[i].ssid);
+        ESP_LOGI(WIFI, "RSSI \t\t%d", ap_info[i].rssi);
+        ESP_LOGI(WIFI, "Channel \t\t%d", ap_info[i].primary);
     }
 }
