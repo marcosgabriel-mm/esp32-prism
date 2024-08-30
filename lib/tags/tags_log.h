@@ -3,3 +3,5 @@
 #define ERROR "ERROR"
 #define HTTP "HTTP"
 #define SOCKET "SOCKET"
+#define READER "READER"
+#define TIME "TIME"

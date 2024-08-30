@@ -5,10 +5,7 @@
 #include "nvs_flash.h"
 #include "wifi_esp.h"
 #include <string.h>
-#include <tags_log.h>
 
-#define WIFI_SSID "ZEMARCOS"
-#define WIFI_PASS "mgmm4103"
 #define DEFAULT_SCAN_LIST_SIZE 10
 
 EventGroupHandle_t wifi_event_group;
@@ -25,7 +22,7 @@ void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id
     }
 }
 
-esp_err_t wifi_init() {
+esp_err_t wifi_init(const char* ssid, const char* pass) {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -48,8 +45,8 @@ esp_err_t wifi_init() {
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, &instance_got_ip));
 
     wifi_config_t wifi_config = {};
-    strcpy((char*)wifi_config.sta.ssid, WIFI_SSID);
-    strcpy((char*)wifi_config.sta.password, WIFI_PASS);
+    strcpy((char*)wifi_config.sta.ssid, ssid);
+    strcpy((char*)wifi_config.sta.password, pass);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
@@ -67,9 +64,9 @@ esp_err_t wifi_init() {
     EventBits_t bits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
 
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(WIFI, "connected to ap SSID: %s | password: %s", WIFI_SSID, WIFI_PASS);
+        ESP_LOGI("WIFI", "connected to ap SSID:%s password:%s", ssid, pass);
     } else {
-        ESP_LOGI(WIFI, "Failed to connect to SSID:%s, password:%s", WIFI_SSID, WIFI_PASS);
+        ESP_LOGI("WIFI", "Failed to connect to SSID:%s, password:%s", ssid, pass);
         return ESP_FAIL;
     }
 
@@ -82,7 +79,14 @@ void wifi_scan() {
         .ssid = NULL,
         .bssid = NULL,
         .channel = 0,
-        .show_hidden = true
+        .show_hidden = true,
+        .scan_type = WIFI_SCAN_TYPE_ACTIVE,
+        .scan_time = {
+            .active = {
+                .min = 100,
+                .max = 200
+            },
+        }
     };
     ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
 
