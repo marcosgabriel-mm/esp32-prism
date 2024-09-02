@@ -1,10 +1,11 @@
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "esp_log.h"
-#include "esp_wifi.h"
-#include "nvs_flash.h"
-#include "wifi_esp.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
+#include <esp_log.h>
+#include <esp_wifi.h>
+#include <nvs_flash.h>
+#include <wifi_esp.h>
 #include <string.h>
+#include <tags_log.h>
 
 #define DEFAULT_SCAN_LIST_SIZE 10
 

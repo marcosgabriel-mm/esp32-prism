@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
-#include "esp_log.h"
-#include "esp_sntp.h"
-#include "tags_log.h"
+#include <esp_log.h>
+#include <esp_sntp.h>
+#include <tags_log.h>
 
 #define TIME_BUFFER_SIZE 64
 
@@ -14,10 +14,18 @@ void time_sync_notification_cb(struct timeval *tv) {
 esp_err_t sync_time() {
     ESP_LOGI(TIME, "Initializing SNTP");
 
-    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    esp_sntp_setservername(0, (char *) "pool.ntp.org");
+    // On linux, this will also set the timezone
+    // esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    // esp_sntp_setservername(0, (char *) "pool.ntp.org");
+    // sntp_set_time_sync_notification_cb(time_sync_notification_cb);
+    // esp_sntp_init();
+
+    // On windows, this will not set the timezone
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
     sntp_set_time_sync_notification_cb(time_sync_notification_cb);
-    esp_sntp_init();
+    sntp_init();
+
     setenv("TZ", "BRT3", 1);
     tzset();
 
