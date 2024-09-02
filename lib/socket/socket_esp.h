@@ -2,8 +2,9 @@
 #define SOCCKET_ESP_H
 
 
-esp_err_t socket_client_connect(int sock, const char *HOST_IP_ADDR, const int PORT);
-bool send_message(int sock, char *message);
-bool verify_creation_socket(int sock);
+void socket_client_connect(void *pvParameters);
+bool send_message(char *message);
+bool verify_creation_socket();
+esp_err_t create_socket();
 
 #endif
