@@ -6,6 +6,7 @@
 #include <wifi_esp.h>
 #include <string.h>
 #include <tags_log.h>
+#include <esp_mac.h>
 
 #define DEFAULT_SCAN_LIST_SIZE 10
 
@@ -72,6 +73,36 @@ esp_err_t wifi_init(const char* ssid, const char* pass) {
     }
 
     return ESP_OK;
+}
+
+void wifi_configure() {
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_create_default_wifi_ap();
+
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid_len = 0,
+            .channel = 1,
+            .max_connection = 1,
+        }
+    };
+
+    snprintf((char *)wifi_config.ap.ssid, sizeof(wifi_config.ap.ssid), "DC-%02X%02X%02X%02X%02X%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI("WIFI", "SSID: %s", wifi_config.ap.ssid);
 }
 
 void wifi_scan() {

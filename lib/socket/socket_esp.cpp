@@ -8,7 +8,8 @@
 #include <esp_system.h>
 #include <esp_mac.h>
 
-#define HOST_IP_ADDR "10.0.0.115"
+//LOCAL HOST ADDRESS
+#define HOST_IP_ADDR "10.0.0.115" 
 #define PORT 1234
 
 int sock = -1;
