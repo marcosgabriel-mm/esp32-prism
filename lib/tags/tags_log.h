@@ -5,3 +5,6 @@
 #define SOCKET "SOCKET"
 #define READER "READER"
 #define TIME "TIME"
+#define EEPROM "EEPROM"
+#define HTTP_SERVER "HTTP_SERVER"
+#define DNS "DNS"

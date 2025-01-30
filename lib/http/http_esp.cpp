@@ -4,9 +4,6 @@
 #include <tags_log.h>
 #include <esp_log.h>
 
-#define HTTP_POST_URL "http://httpbin.org/post"
-#define HTTP_GET_URL "http://httpbin.org/get"
-
 esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     switch(evt->event_id) {
         case HTTP_EVENT_ERROR:
@@ -40,9 +37,9 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-void http_get(void* pvParameters) {
+void http_get(char *url) {
     esp_http_client_config_t config = {
-        .url = "http://httpbin.org/get",
+        .url = url,
         .event_handler = _http_event_handler,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -60,9 +57,9 @@ void http_get(void* pvParameters) {
     esp_http_client_cleanup(client);
 }
 
-bool http_post(char *message) {
+bool http_post(char *url ,char *message) {
     esp_http_client_config_t config = {
-        .url = "http://httpbin.org/post",
+        .url = url,
         .event_handler = _http_event_handler,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);

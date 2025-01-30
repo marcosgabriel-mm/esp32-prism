@@ -4,11 +4,13 @@
 #include "freertos/event_groups.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_netif.h"
 
 #include <tags_log.h>
 #include <wifi_esp.h>
 #include <http_esp.h>
 #include <eeprom_esp.h>
+#include <wifi_credentials_page/wifi_credentials.h>
 
 #include <socket_esp.h>
 #include <reader_esp.h>
@@ -17,26 +19,38 @@
 extern "C" void app_main() {
     
     ESP_LOGI(MAIN, "Starting ESP32 application...");    
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
     setup_eeprom();
 
     if (!has_wifi_configured()) {
-        wifi_configure();
-        // call a function to show a web page asking for the wifi credentials and id of the room of the device will be installed
-        // save the wifi credentials and the id of the room in the EEPROM
-        // save a flag in the EEPROM to indicate that the wifi credentials are saved
-        // reboot the device
+        start_wifi_ap();
+        start_webserver();
+
+        while (!wifi_credentials().connected) {
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            ESP_LOGI(MAIN, "Waiting for the user to configure the wifi...");
+        }
+
+        wifi_credentials_t credentials = wifi_credentials();
+        ESP_LOGI(MAIN, "SSID: %s | Password: %s", credentials.ssid, credentials.password);
+        
+        save_wifi_credentials(credentials.ssid, credentials.password);
+        set_wifi_configured(0);
+        
+        esp_restart();
     }
 
-    // load from the EEPROM the wifi credentials
-    // ESP_ERROR_CHECK(wifi_init(WIFI_SSID, WIFI_PASS));
-    // ESP_ERROR_CHECK(sync_time());
+    wifi_credentials_t credentials = load_wifi_credentials();
+    ESP_ERROR_CHECK(wifi_init(credentials.ssid, credentials.password));
+    ESP_ERROR_CHECK(sync_time());
 
     size_t free_heap_size = esp_get_free_heap_size();
     ESP_LOGI(MAIN, "Free heap size: %d bytes | %d megabytes", free_heap_size, free_heap_size / 1024);
 
-    // xTaskCreate(&socket_client_connect, "socket_client_connect", 1024*4, NULL, 5, NULL);
-    // xTaskCreate(&dummy_reader_esp, "dummy_reader_esp", 1024*4, NULL, 5, NULL);
 
-    // clean up the memory allocated when isn't needed anymore
-    // vPortFree(sock);
+    // create task to get updated users from the server, in 6:6 hours
+    // create task to when the user hold the boot button for 3 seconds, the device erase the wifi credentials
+    // fucntion to reset EEPROM: reset_wifi_credentials();
+    // xTaskCreate(&dummy_reader_esp, "dummy_reader_esp", 1024*4, NULL, 5, NULL); // task to simulate the RFID reader
 }
